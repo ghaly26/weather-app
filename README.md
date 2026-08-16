@@ -2,7 +2,9 @@ Full Stack Weather App
 
 we take a React + Node.js weather app from localhost to a live production website. 
 
-We’ll deploy: Node.js Backend → Render 
+We’ll deploy: 
+
+Node.js Backend → Render 
 
 React Frontend → Vercel 
 
