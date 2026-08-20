@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 
+// This automatically handles switching between your live Vercel URL and your local computer link
+const BACKEND_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 function App() {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
@@ -15,9 +18,9 @@ function App() {
 
     const fetchSuggestions = async () => {
       try {
-        // Replace with your actual deployed backend URL or http://localhost:5000 for local testing
-        const API_KEY = "YOUR_OPENWEATHER_API_KEY"; 
-        const res = await fetch(`https://openweathermap.org{query}&limit=5&appid=${API_KEY}`);
+        // Routed through your backend to keep your API keys hidden and safe!
+        const res = await fetch(`${BACKEND_URL}/api/suggestions?query=${query}`);
+        if (!res.ok) throw new Error("Could not fetch suggestions");
         const data = await res.json();
         setSuggestions(data);
       } catch (err) {
@@ -38,8 +41,8 @@ function App() {
     setWeather(null);
     setSuggestions([]);
     try {
-      // Point this to your backend server endpoint
-      const res = await fetch(`http://localhost:5000/api/weather?city=${cityName}`);
+      // Clean dynamic fetch line that works on localhost and live servers
+      const res = await fetch(`${BACKEND_URL}/api/weather?city=${cityName}`);
       if (!res.ok) throw new Error("City not found or server error");
       const data = await res.json();
       setWeather(data);

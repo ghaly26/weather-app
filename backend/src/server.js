@@ -30,3 +30,17 @@ app.get('/api/weather', async (req, res) => {
 
 const port = process.env.PORT || 5000;
 app.listen(port, () => console.log(`Server running on port ${port}`));
+
+// Add this right next to your existing app.get('/api/weather') endpoint!
+app.get('/api/suggestions', async (req, res) => {
+  const { query } = req.query;
+  const apiKey = process.env.WEATHER_API_KEY; 
+  
+  try {
+    const response = await fetch(`https://openweathermap.org{query}&limit=5&appid=${apiKey}`);
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ message: "Server error fetching suggestions" });
+  }
+});
