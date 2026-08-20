@@ -1,104 +1,101 @@
-import React, { useState } from 'react';
-import { CloudRain, Compass, Thermometer, Droplets } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 
 function App() {
-  const [city, setCity] = useState('');
-  const [weatherData, setWeatherData] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [query, setQuery] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [weather, setWeather] = useState(null);
   const [error, setError] = useState('');
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!city.trim()) return;
+  // 1. Fetch suggestions as the user types prefix letters
+  useEffect(() => {
+    if (query.length < 3) {
+      setSuggestions([]);
+      return;
+    }
 
-    setLoading(true);
-    setError('');
-    
-    try {
-      // 🔗 Points directly to your live Render backend endpoint
-      const response = await fetch(`https://onrender.com{city}`);
-      
-      if (!response.ok) {
-        throw new Error('City not found or server error');
+    const fetchSuggestions = async () => {
+      try {
+        // Replace with your actual deployed backend URL or http://localhost:5000 for local testing
+        const API_KEY = "YOUR_OPENWEATHER_API_KEY"; 
+        const res = await fetch(`https://openweathermap.org{query}&limit=5&appid=${API_KEY}`);
+        const data = await res.json();
+        setSuggestions(data);
+      } catch (err) {
+        console.error("Failed to fetch suggestions", err);
       }
-      
-      const data = await response.json();
-      setWeatherData(data);
+    };
+
+    const delayDebounce = setTimeout(() => {
+      fetchSuggestions();
+    }, 300); // Waits 300ms after user stops typing to save API calls
+
+    return () => clearTimeout(delayDebounce);
+  }, [query]);
+
+  // 2. Fetch final weather results
+  const fetchWeather = async (cityName) => {
+    setError('');
+    setWeather(null);
+    setSuggestions([]);
+    try {
+      // Point this to your backend server endpoint
+      const res = await fetch(`http://localhost:5000/api/weather?city=${cityName}`);
+      if (!res.ok) throw new Error("City not found or server error");
+      const data = await res.json();
+      setWeather(data);
     } catch (err) {
       setError(err.message);
-      setWeatherData(null);
-    } finally {
-      setLoading(false);
     }
   };
 
   return (
-    <div style={{ backgroundColor: '#111622', color: '#ffffff', minHeight: '100vh', padding: '40px 20px', fontFamily: 'sans-serif' }}>
-      
-      {/* Header section matching your screenshot template */}
-      <div style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center', marginBottom: '30px' }}>
-        <p style={{ color: '#D4AF37', fontSize: '12px', letterSpacing: '2px', fontWeight: 'bold', margin: '0 0 5px 0' }}>STATION REPORT</p>
-        <h1 style={{ fontSize: '42px', margin: '0 0 30px 0', fontWeight: 'normal' }}>Weather</h1>
-        
-        {/* Search input form */}
-        <form onSubmit={handleSearch} style={{ display: 'flex', gap: '10px' }}>
-          <input 
-            type="text" 
-            placeholder="tokyo" 
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            style={{ flex: 1, backgroundColor: '#172237', border: '1px solid #233554', padding: '15px', color: '#fff', borderRadius: '4px', fontSize: '16px' }}
+    <div style={{ background: '#0d1326', color: 'white', minHeight: '100vh', padding: '40px' }}>
+      <h2>STATION REPORT</h2>
+      <h1>Weather</h1>
+
+      <div style={{ position: 'relative', width: '300px', margin: '0 auto' }}>
+        <div style={{ display: 'flex' }}>
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Enter city..."
+            style={{ padding: '10px', width: '100%', background: '#1a233d', color: 'white', border: '1px solid #334155' }}
           />
-          <button 
-            type="submit" 
-            style={{ backgroundColor: '#172237', border: '1px solid #D4AF37', color: '#D4AF37', padding: '0 25px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-          >
-            {loading ? '...' : 'CHECK'}
+          <button onClick={() => fetchWeather(query)} style={{ padding: '10px', background: 'transparent', border: '1px solid #e2b43b', color: '#e2b43b', cursor: 'pointer' }}>
+            CHECK
           </button>
-        </form>
-        {error && <p style={{ color: '#ff4a4a', marginTop: '10px' }}>{error}</p>}
+        </div>
+
+        {/* Suggestions Dropdown Overlay */}
+        {suggestions.length > 0 && (
+          <ul style={{ position: 'absolute', width: '100%', background: '#1a233d', border: '1px solid #334155', listStyle: 'none', padding: 0, margin: 0, textAlign: 'left', zIndex: 10 }}>
+            {suggestions.map((city, idx) => (
+              <li 
+                key={idx} 
+                onClick={() => {
+                  setQuery(`${city.name}, ${city.country}`);
+                  fetchWeather(city.name);
+                }}
+                style={{ padding: '10px', cursor: 'pointer', borderBottom: '1px solid #2d3748' }}
+              >
+                {city.name}, {city.state ? `${city.state}, ` : ''}{city.country}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
-      {/* Main interactive weather panel layout */}
-      {weatherData && (
-        <div style={{ maxWidth: '500px', margin: '0 auto', backgroundColor: '#172237', borderRadius: '8px', padding: '40px', boxShadow: '0 10px 25px rgba(0,0,0,0.3)' }}>
-          <div style={{ display: 'flex', justifyContent: 'between', alignItems: 'start', position: 'relative' }}>
-            <div>
-              <span style={{ color: '#64ffda', fontSize: '12px', fontWeight: 'bold' }}>{weatherData.country || 'JP'}</span>
-              <h2 style={{ fontSize: '36px', margin: '5px 0 20px 0' }}>{weatherData.name}</h2>
-            </div>
-            <div style={{ position: 'absolute', right: '0', top: '0', color: '#D4AF37' }}>
-              <CloudRain size={48} />
-            </div>
-          </div>
+      {/* Error Message Section */}
+      {error && <p style={{ color: 'red', marginTop: '20px' }}>{error}</p>}
 
-          <div style={{ display: 'flex', alignItems: 'baseline', margin: '20px 0' }}>
-            <span style={{ fontSize: '96px', fontWeight: '300', lineHeight: '1' }}>{Math.round(weatherData.temp)}</span>
-            <span style={{ fontSize: '48px', fontWeight: '300', alignSelf: 'start', marginTop: '10px' }}>°</span>
-            <span style={{ fontSize: '16px', color: '#8892b0', marginLeft: '20px' }}>{weatherData.description}</span>
-          </div>
-
-          {/* Compass Dashboard element */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px', borderTop: '1px solid #233554', paddingTop: '20px', marginBottom: '20px' }}>
-            <div style={{ color: '#8892b0' }}><Compass size={48} /></div>
-            <div>
-              <div style={{ fontSize: '24px', fontWeight: 'bold' }}><span style={{ color: '#D4AF37' }}>{weatherData.windSpeed}</span> km/h</div>
-              <div style={{ fontSize: '14px', color: '#8892b0' }}>{weatherData.windDir} • {weatherData.windAngle}°</div>
-            </div>
-          </div>
-
-          {/* Extra modular detail boxes at footer */}
-          <div style={{ display: 'flex', gap: '15px' }}>
-            <div style={{ flex: 1, backgroundColor: '#111622', padding: '15px', borderRadius: '4px' }}>
-              <div style={{ fontSize: '12px', color: '#8892b0', marginBottom: '5px' }}>FEELS LIKE</div>
-              <div style={{ fontSize: '18px', display: 'flex', alignItems: 'center', gap: '5px' }}><Thermometer size={16} /> {Math.round(weatherData.feelsLike)}°</div>
-            </div>
-            <div style={{ flex: 1, backgroundColor: '#111622', padding: '15px', borderRadius: '4px' }}>
-              <div style={{ fontSize: '12px', color: '#8892b0', marginBottom: '5px' }}>HUMIDITY</div>
-              <div style={{ fontSize: '18px', display: 'flex', alignItems: 'center', gap: '5px' }}><Droplets size={16} /> {weatherData.humidity}%</div>
-            </div>
-          </div>
-
+      {/* Weather Results Section */}
+      {weather && (
+        <div style={{ marginTop: '30px', border: '1px solid #334155', padding: '20px', display: 'inline-block', background: '#1a233d' }}>
+          <h3>{weather.name}, {weather.sys.country}</h3>
+          <h2>{Math.round(weather.main.temp)}°C</h2>
+          <p>{weather.weather[0].description}</p>
+          <p>Humidity: {weather.main.humidity}%</p>
         </div>
       )}
     </div>
