@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
-// Replace the old link with your live Render server address
-const BACKEND_URL = import.meta.env.VITE_API_URL || "https://weather-app-f0qg.onrender.com"; // Fallback to Render server if VITE_API_URL is not set
+// Remove the variable lookup and paste your live link directly as a clean string!
+const BACKEND_URL = "https://weather-app-f0qg.onrender.com";
 
 function App() {
   const [query, setQuery] = useState('');
