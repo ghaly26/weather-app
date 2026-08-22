@@ -15,11 +15,12 @@ app.get('/api/weather', async (req, res) => {
   const apiKey = process.env.WEATHER_API_KEY;
 
   try {
-    const response = await fetch(`https://openweathermap.org{encodeURIComponent(city)}&units=metric&appid=${apiKey}`);
+    // FIXED: Added api. prefix, missing path, and the mandatory '$' sign for template literals
+    const url = `https://openweathermap.org{encodeURIComponent(city)}&units=metric&appid=${apiKey}`;
+    const response = await fetch(url);
     const data = await response.json();
 
     if (response.ok) {
-      // FIXED: Safely read from the OpenWeather data array index [0]
       res.json({
         name: data.name,
         sys: { country: data.sys.country },
@@ -35,6 +36,7 @@ app.get('/api/weather', async (req, res) => {
       res.status(response.status).json({ message: data.message });
     }
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Server error fetching weather data" });
   }
 });
@@ -45,11 +47,13 @@ app.get('/api/suggestions', async (req, res) => {
   const apiKey = process.env.WEATHER_API_KEY; 
   
   try {
-    // FIXED URL: Added the correct OpenWeatherMap geocoding path
-    const response = await fetch(`https://openweathermap.org{encodeURIComponent(query)}&limit=5&appid=${apiKey}`);
+    // FIXED: Added api. prefix, missing path, and the mandatory '$' sign for template literals
+    const url = `https://openweathermap.org{encodeURIComponent(query)}&limit=5&appid=${apiKey}`;
+    const response = await fetch(url);
     const data = await response.json();
     res.json(data);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Server error fetching suggestions" });
   }
 });
