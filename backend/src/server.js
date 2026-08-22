@@ -15,12 +15,11 @@ app.get('/api/weather', async (req, res) => {
   const apiKey = process.env.WEATHER_API_KEY;
 
   try {
-    // FIXED URL: Added the correct OpenWeatherMap data path
     const response = await fetch(`https://openweathermap.org{encodeURIComponent(city)}&units=metric&appid=${apiKey}`);
     const data = await response.json();
 
     if (response.ok) {
-      // Formatted precisely to match your frontend weather.weather.description call
+      // FIXED: Safely read from the OpenWeather data array index [0]
       res.json({
         name: data.name,
         sys: { country: data.sys.country },
